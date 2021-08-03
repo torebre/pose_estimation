@@ -1,0 +1,8 @@
+.idea
+venv*
+*.zip
+train2017
+val2017
+annotations
+svhn
+**/__pycache__/**
