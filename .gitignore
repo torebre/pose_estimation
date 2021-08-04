@@ -6,3 +6,4 @@ val2017
 annotations
 svhn
 **/__pycache__/**
+**/*.pt
