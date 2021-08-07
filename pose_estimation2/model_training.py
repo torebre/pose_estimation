@@ -55,4 +55,4 @@ for epoch in range(n_epochs):
 
     print("Epoch: %d, Loss: %f" % (epoch, float(loss)))
 
-torch.save(model.state_dict(), "svnh_model.pt")
+torch.save(model.state_dict(), "svnh_model_normalized_images.pt")
