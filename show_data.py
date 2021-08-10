@@ -33,7 +33,3 @@ im = im.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3])) \
     .resize((256, 192))
 
 im
-
-#%%
-
-

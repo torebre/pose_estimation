@@ -6,8 +6,9 @@ from torch.utils.data import Dataset
 class SVHN_dataset(Dataset):
 
     def __init__(self, data):
+        self.data = data
         images = torch.tensor(data['X']).permute([3, 2, 0, 1])
-        self.labels = torch.tensor(data['y'])
+        self.labels = torch.tensor(data['y'], dtype=torch.long)
         self.size = self.labels.shape[0]
 
         # Replace label 10 with label 0
@@ -16,7 +17,7 @@ class SVHN_dataset(Dataset):
                 label[0] = 0
 
         # Convert to float and normalize to [0, 1] range
-        self.normalized_images = [image.type(torch.FloatTensor) / 255 for image in self.images]
+        self.normalized_images = [image.type(torch.FloatTensor) / 255 for image in images]
         for image in self.normalized_images:
             image.type(torch.FloatTensor)
 
@@ -24,7 +25,7 @@ class SVHN_dataset(Dataset):
         return self.size
 
     def __getitem__(self, idx):
-        return self.images[idx], self.labels[idx]
+        return self.normalized_images[idx], self.labels[idx].item()
 
 
 if __name__ == "__main__":
