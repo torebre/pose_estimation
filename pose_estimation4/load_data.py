@@ -1,13 +1,11 @@
 import json
-import matplotlib.pyplot as plt
-import numpy as np
 
+import numpy as np
+import numpy.typing as npt
 from PIL import Image, ImageDraw
 
 
-
-
-def load_image(image_file, image_annotation):
+def load_image(image_file, image_annotation) -> npt.ArrayLike:
     bbox = image_annotation['bbox']
     im = Image.open(image_file)
 
@@ -21,19 +19,13 @@ def load_image(image_file, image_annotation):
 
     # print(pixel_array)
 
-    print("Test23: ", pixel_array.shape)
+    # print("Test23: ", pixel_array.shape)
+    # print("Test24: ", np.mean(pixel_array[:, :, 1]))
 
-    print("Test24: ", np.mean(pixel_array[:, :, 1]))
+    # TODO Need to normalize with respect to some mean
 
+    return pixel_array
 
-
-
-
-    # for i in range(len(keypoint_names)):
-    #     start = i * 3
-    #     if keypoints[start + 2] == 2:
-    #         # Keypoint is visible
-    #         drawing.text((keypoints[start], keypoints[start + 1]), keypoint_names[i])
 
 
 if __name__ == "__main__":

@@ -13,12 +13,13 @@ def generate_heatmaps(val_keypoint_data):
         generate_heatmap_for_image(image)
 
 
-def generate_heatmap_for_image(image):
+def generate_heatmap_for_image(image) -> tuple:
     heatmaps = np.zeros((17, 64, 48))
     keypoints = image["keypoints"]
     bbox = image['bbox']
     width = bbox[2]
     height = bbox[3]
+    validity = np.ones(17)
 
     for i in range(17):
         start = i * 3
@@ -33,8 +34,9 @@ def generate_heatmap_for_image(image):
 
             # TODO Need to normalize values
             heatmaps[i, x_scaled.astype(int), y_scaled.astype(int)] = 1
+            validity[i] = 0
 
-    return heatmaps
+    return heatmaps, validity
 
 
 def apply_gaussian_filter_to_heatmaps(heatmaps):
