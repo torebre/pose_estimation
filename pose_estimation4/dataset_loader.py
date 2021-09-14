@@ -32,7 +32,10 @@ class CocoDataset(Dataset):
         heatmaps, validity = generate_heatmap_for_image(image_data)
         apply_gaussian_filter_to_heatmaps(heatmaps)
 
-        return torch.from_numpy(image_as_pixel_array), torch.from_numpy(heatmaps), torch.from_numpy(validity)
+        # TODO Is this the correct type to set for the array?
+        image_tensor = torch.from_numpy(image_as_pixel_array.astype('float32'))
+        updated_image_tensor = torch.tensor(image_tensor).permute([2, 0, 1])
+        return updated_image_tensor, torch.from_numpy(heatmaps), torch.from_numpy(validity)
 
 
 def clean_data(val_keypoint_data) -> List:

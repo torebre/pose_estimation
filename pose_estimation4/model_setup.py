@@ -35,5 +35,5 @@ def get_model():
 
 
 if __name__ == "__main__":
-    model = get_model()
+    model = get_model().to('cuda')
     summary(model, (3, 256, 192))

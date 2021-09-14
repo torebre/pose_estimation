@@ -4,19 +4,19 @@ import os
 import torch
 import torch.nn as nn
 from torch import optim
+from torchsummary import summary
 
 from pose_estimation4.dataset_loader import CocoDataset
 from pose_estimation4.model_setup import get_model
 
-# TODO Set model to use CUDA
-# model = get_model().to('cuda')
-model = get_model()
 
 learning_rate = 1e-3
 
 device = (torch.device('cuda') if torch.cuda.is_available()
           else torch.device('cpu'))
 print(f"Training on device {device}.")
+
+model = get_model().to('cuda')
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 loss_fn = nn.MSELoss()
@@ -32,18 +32,22 @@ with open("../annotations/person_keypoints_train2017.json") as train_keypoints:
 
 training_dataloader = torch.utils.data.DataLoader(training_dataset, batch_size=32, shuffle=True)
 
-with open("../annotations/person_keypoints_val2017.json") as val_keypoints:
-    image_directory = f"{dir_path}/../val2017"
-    val_keypoint_data = json.load(val_keypoints)
-    validation_dataset = CocoDataset(val_keypoint_data, image_directory)
+# with open("../annotations/person_keypoints_val2017.json") as val_keypoints:
+#     image_directory = f"{dir_path}/../val2017"
+#     val_keypoint_data = json.load(val_keypoints)
+#     validation_dataset = CocoDataset(val_keypoint_data, image_directory)
 
-test_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=32, shuffle=False)
+# test_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=32, shuffle=False)
 
 
 for epoch in range(n_epochs):
     for images, heatmaps, validities in training_dataloader:
         # Set training to use CUDA
-        # images, labels = images.to('cuda'), labels.to('cuda')
+        images = images.to('cuda')
+
+        # summary(model, (3, 256, 192))
+        print("Data set: ", images.shape) #, heatmaps[0].shape, validities[0].shape)
+
         outputs = model(images)
 
         # TODO Setup correct use of loss function
