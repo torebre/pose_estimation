@@ -17,6 +17,7 @@ device = (torch.device('cuda') if torch.cuda.is_available()
 print(f"Training on device {device}.")
 
 model = get_model().to('cuda')
+# model = get_model()
 
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 loss_fn = nn.MSELoss()
@@ -44,20 +45,29 @@ for epoch in range(n_epochs):
     for images, heatmaps, validities in training_dataloader:
         # Set training to use CUDA
         images = images.to('cuda')
+        heatmaps = heatmaps.to('cuda')
+        validities = validities.to('cuda')
 
         # summary(model, (3, 256, 192))
-        print("Data set: ", images.shape) #, heatmaps[0].shape, validities[0].shape)
+        # print(f"Test25: {heatmaps[0].shape}, {validities[0].shape}")
 
         outputs = model(images)
 
         # TODO Setup correct use of loss function
-        loss = loss_fn(outputs, heatmaps)
+        # print(f"Outputs: {outputs.shape}. Heatmaps: {heatmaps.shape}")
+
+        batch_size = validities.shape[0]
+        validities_expanded = validities.view(batch_size, -1, 1, 1)
+
+        # print(f"Test30: {validities.shape}, {validities_expanded.shape}, {outputs.shape}")
+
+        loss = loss_fn(outputs * validities_expanded, heatmaps * validities_expanded)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-    print("Epoch: %d, Loss: %f" % (epoch, float(loss)))
+        print("Epoch: %d, Loss: %f" % (epoch, float(loss)))
 
     # if epoch % 10 == 0:
         # accuracy = get_accuracy(model, test_dataloader)

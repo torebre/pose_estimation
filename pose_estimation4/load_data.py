@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 
 def load_image(image_file, image_annotation) -> npt.ArrayLike:
     bbox = image_annotation['bbox']
-    im = Image.open(image_file)
+    im = Image.open(image_file).convert('RGB')
 
     keypoints = image_annotation['keypoints']
     drawing = ImageDraw.Draw(im)
