@@ -6,11 +6,12 @@ import torch.nn as nn
 from torch import optim
 from torchsummary import summary
 
+from pose_estimation4.accuracy_computation import get_accuracy
 from pose_estimation4.dataset_loader import CocoDataset
 from pose_estimation4.model_setup import get_model
 
-
-learning_rate = 1e-3
+learning_rate = 1e-4
+learning_rate_updated = 1e-5
 
 device = (torch.device('cuda') if torch.cuda.is_available()
           else torch.device('cpu'))
@@ -33,47 +34,52 @@ with open("../annotations/person_keypoints_train2017.json") as train_keypoints:
 
 training_dataloader = torch.utils.data.DataLoader(training_dataset, batch_size=32, shuffle=True)
 
-# with open("../annotations/person_keypoints_val2017.json") as val_keypoints:
-#     image_directory = f"{dir_path}/../val2017"
-#     val_keypoint_data = json.load(val_keypoints)
-#     validation_dataset = CocoDataset(val_keypoint_data, image_directory)
+with open("../annotations/person_keypoints_val2017.json") as val_keypoints:
+    image_directory = f"{dir_path}/../val2017"
+    val_keypoint_data = json.load(val_keypoints)
+    validation_dataset = CocoDataset(val_keypoint_data, image_directory)
 
-# test_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=32, shuffle=False)
+test_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=32, shuffle=False)
 
+learning_rate_latch = True
+previous_accuracy = 0.0
 
 for epoch in range(n_epochs):
+    counter = 0
+
     for images, heatmaps, validities in training_dataloader:
         # Set training to use CUDA
         images = images.to('cuda')
         heatmaps = heatmaps.to('cuda')
         validities = validities.to('cuda')
 
-        # summary(model, (3, 256, 192))
-        # print(f"Test25: {heatmaps[0].shape}, {validities[0].shape}")
-
         outputs = model(images)
-
-        # TODO Setup correct use of loss function
-        # print(f"Outputs: {outputs.shape}. Heatmaps: {heatmaps.shape}")
 
         batch_size = validities.shape[0]
         validities_expanded = validities.view(batch_size, -1, 1, 1)
-
-        # print(f"Test30: {validities.shape}, {validities_expanded.shape}, {outputs.shape}")
-
         loss = loss_fn(outputs * validities_expanded, heatmaps * validities_expanded)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        print("Epoch: %d, Loss: %f" % (epoch, float(loss)))
+        # TODO Using a small number of batches while developing
+        counter += 1
+        if counter == 1:
+            break
 
-    # if epoch % 10 == 0:
-        # accuracy = get_accuracy(model, test_dataloader)
-        # print(f"Accuracy:{accuracy}")
-        #
-        # if accuracy > 0.9:
-        #     break
+        # print("Epoch: %d, Loss: %f" % (epoch, float(loss)))
+
+    computed_accuracy = get_accuracy(model, test_dataloader)
+
+    if learning_rate_latch and computed_accuracy <= previous_accuracy:
+        for param_group in optimizer.param_groups:
+            param_group["lr"] = learning_rate_updated
+            learning_rate_latch = False
+
+    print(f"Accuracy:{computed_accuracy}")
+
+    if computed_accuracy > 0.9:
+        break
 
 # torch.save(model.state_dict(), "svnh_model_normalized_images.pt")

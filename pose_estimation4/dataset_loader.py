@@ -4,7 +4,6 @@ from typing import List
 import os
 
 import torch
-import numpy as np
 from torch.utils.data import Dataset
 
 from pose_estimation4.heatmap_computations import generate_heatmap_for_image, apply_gaussian_filter_to_heatmaps
@@ -36,9 +35,6 @@ class CocoDataset(Dataset):
         # TODO Is this the correct type to set for the array?
         image_tensor = torch.from_numpy(image_as_pixel_array.astype('float32'))
         updated_image_tensor = torch.tensor(image_tensor).permute([2, 1, 0])
-
-        # if not np.array_equal(updated_image_tensor.shape, [3, 256, 192]):
-        #     print(f"Test24: {updated_image_tensor.shape}")
 
         return updated_image_tensor, torch.from_numpy(heatmaps.astype('float32')), torch.from_numpy(
             validity.astype('float32'))
