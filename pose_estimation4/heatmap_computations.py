@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.ndimage.filters import gaussian_filter
 
 
-
 def generate_heatmaps(val_keypoint_data):
-    keypoint_names = val_keypoint_data['categories'][0]['keypoints']
     val_keypoint_data["annotations"]
 
     for image in val_keypoint_data["annotations"]:
@@ -19,22 +17,30 @@ def generate_heatmap_for_image(image) -> tuple:
     bbox = image['bbox']
     width = bbox[2]
     height = bbox[3]
-    validity = np.ones(17)
+    validity = np.zeros(17)
 
     for i in range(17):
         start = i * 3
-        if keypoints[start + 2] == 2:
-            # Keypoint is visible
-            # drawing.text((keypoints[start], keypoints[start + 1]), keypoint_names[i])
+        visibility_flag = keypoints[start + 2]
+
+        if visibility_flag != 0:
+            # Keypoint is in the image, it may be hidden (1) or visible (2)
             x_coordinate = keypoints[start]
             y_coordinate = keypoints[start + 1]
 
-            x_scaled = np.floor(64.0 * (x_coordinate - bbox[0]) / width)
-            y_scaled = np.floor(48.0 * (y_coordinate - bbox[1]) / height)
+            x_scaling_factor = 64.0 * (x_coordinate - bbox[0]) / width
+            y_scaling_factor = 48.0 * (y_coordinate - bbox[1]) / height
 
-            # TODO Need to normalize values
+            if x_scaling_factor > 1.0 or y_scaling_factor > 1.0:
+                # This means the feature is not inside the bounding box, skip
+                # the image in that case
+                continue
+
+            x_scaled = np.floor(x_scaling_factor)
+            y_scaled = np.floor(y_scaling_factor)
+
             heatmaps[i, x_scaled.astype(int), y_scaled.astype(int)] = 1
-            validity[i] = 0
+            validity[i] = 1
 
     return heatmaps, validity
 
@@ -49,6 +55,7 @@ def apply_gaussian_filter_to_heatmaps(heatmaps):
         if max_value > 0.0:
             heatmaps[i, :, :] /= max_value
 
+
 def generate_heatmap_test(val_keypoint_data):
     keypoint_names = val_keypoint_data['categories'][0]['keypoints']
     heatmaps = generate_heatmap_for_image(val_keypoint_data["annotations"][0])
@@ -58,7 +65,6 @@ def generate_heatmap_test(val_keypoint_data):
 
     plt.imshow(heatmaps[6, :, :])
     plt.show()
-
 
 
 if __name__ == "__main__":
