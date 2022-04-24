@@ -17,15 +17,7 @@ def load_image(image_file, image_annotation) -> npt.ArrayLike:
 
     pixel_array = np.array(im) / 255.0
 
-    # print(pixel_array)
-
-    # print("Test23: ", pixel_array.shape)
-    # print("Test24: ", np.mean(pixel_array[:, :, 1]))
-
-    # TODO Need to normalize with respect to some mean
-
     return pixel_array
-
 
 
 if __name__ == "__main__":

@@ -9,22 +9,28 @@ from pose_estimation4.accuracy_computation import get_accuracy
 from pose_estimation4.dataset_loader import CocoDataset
 from pose_estimation4.model_setup import get_model
 
-learning_rate = 1e-4
-learning_rate_updated = 1e-5
+LEARNING_RATE = 1e-4
+LEARNING_RATE_UPDATED = 1e-5
+NUMBER_OF_EPOCHS = 10
+DRIVE_PATH = "drive/human_pose_estimation/section4"
 
 device = (torch.device('cuda') if torch.cuda.is_available()
           else torch.device('cpu'))
 print(f"Training on device {device}.")
 
 model = get_model().to('cuda')
-# model = get_model()
 
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
+scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [8], 0.1)
 loss_fn = nn.MSELoss()
 
-n_epochs = 10000
-
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
+
+def checkpoint_model(model, optimizer, epoch, iteration_counter):
+    # torch.save(model.state_dict(), DRIVE_PATH + "network_" + str(epoch) + "_" + str(batch) + '.pt')
+    torch.save(model.state_dict(), "network_" + str(epoch) + "_" + str(iteration_counter) + '.pt')
+
 
 with open("../annotations/person_keypoints_train2017.json") as train_keypoints:
     image_directory = f"{dir_path}/../train2017"
@@ -43,9 +49,9 @@ test_dataloader = torch.utils.data.DataLoader(validation_dataset, batch_size=32,
 learning_rate_latch = True
 previous_accuracy = 0.0
 
-for epoch in range(n_epochs):
-    batch_counter = 0
-
+iteration_counter = 0
+for epoch in range(NUMBER_OF_EPOCHS):
+    # Iterate over the batches
     for images, heatmaps, validities in training_dataloader:
         # Set training to use CUDA
         images = images.to('cuda')
@@ -62,27 +68,25 @@ for epoch in range(n_epochs):
         loss.backward()
         optimizer.step()
 
-        # TODO Using a small number of batches while developing
-        batch_counter += 1
-        # if counter == 1:
-        #     break
+        iteration_counter += 1
 
-        if batch_counter % 20 == 0:
+        if iteration_counter % 100 == 0:
             computed_accuracy = get_accuracy(model, test_dataloader)
-            print(f"Counter: {batch_counter}. Computed accuracy: {computed_accuracy}")
+            print(f"Epoch: {epoch}. Counter: {iteration_counter}. Computed accuracy: {computed_accuracy}")
 
-        # print("Epoch: %d, Loss: %f" % (epoch, float(loss)))
+        if iteration_counter % 100 == 0:
+            checkpoint_model(model, optimizer, epoch, iteration_counter)
+
+        # scheduler.step()
 
     computed_accuracy = get_accuracy(model, test_dataloader)
 
     if learning_rate_latch and computed_accuracy <= previous_accuracy:
         for param_group in optimizer.param_groups:
-            param_group["lr"] = learning_rate_updated
+            param_group["lr"] = LEARNING_RATE_UPDATED
             learning_rate_latch = False
 
     print(f"Accuracy:{computed_accuracy}")
 
     if computed_accuracy > 0.9:
         break
-
-# torch.save(model.state_dict(), "svnh_model_normalized_images.pt")
