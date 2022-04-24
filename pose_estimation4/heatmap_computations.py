@@ -14,9 +14,7 @@ def generate_heatmaps(val_keypoint_data):
 def generate_heatmap_for_image(image) -> tuple:
     heatmaps = np.zeros((17, 64, 48))
     keypoints = image["keypoints"]
-    bbox = image['bbox']
-    width = bbox[2]
-    height = bbox[3]
+    x_start, y_start, width, height = image['bbox']
     validity = np.zeros(17)
 
     for i in range(17):
@@ -28,22 +26,20 @@ def generate_heatmap_for_image(image) -> tuple:
             x_coordinate = keypoints[start]
             y_coordinate = keypoints[start + 1]
 
-            x_scaling_factor = 64.0 * (x_coordinate - bbox[0]) / width
-            y_scaling_factor = 48.0 * (y_coordinate - bbox[1]) / height
+            x_scaled = 48.0 * (x_coordinate - x_start) / width
+            y_scaled = 64.0 * (y_coordinate - y_start) / height
 
-            if x_scaling_factor > 1.0 \
-                    or x_scaling_factor < 0.0 \
-                    or y_scaling_factor > 1.0 \
-                    or y_scaling_factor < 0.0:
+            if x_scaled >= 48.0 \
+                    or x_scaled < 0.0 \
+                    or y_scaled >= 64.0 \
+                    or y_scaled < 0.0:
                 # This means the feature is not inside the bounding box, skip
                 # the image in that case
                 continue
 
-            x_scaled = np.floor(x_scaling_factor)
-            y_scaled = np.floor(y_scaling_factor)
-
-            heatmaps[i, x_scaled.astype(int), y_scaled.astype(int)] = 1
             validity[i] = 1
+            heatmaps[i, np.floor(y_scaled).astype(int),
+                     np.floor(x_scaled).astype(int)] = 1.0
 
     return heatmaps, validity
 

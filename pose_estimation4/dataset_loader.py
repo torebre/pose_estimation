@@ -43,7 +43,7 @@ class CocoDataset(Dataset):
 
         transformed_pixel_array = image_as_pixel_array.astype('float32')
 
-        # Scale the image data using the mean and variance given in the execise text
+        # Scale the image data using the mean and variance given in the exercise text
         transformed_pixel_array[:, :, 0] = (transformed_pixel_array[:, :, 0] - self.mean_values[0]) / self.scale_values[
             0]
         transformed_pixel_array[:, :, 1] = (transformed_pixel_array[:, :, 1] - self.mean_values[1]) / self.scale_values[

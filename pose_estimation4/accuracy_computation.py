@@ -13,17 +13,12 @@ def get_accuracy(model, dataloader: torch.utils.data.DataLoader):
     model.eval()
 
     # Only use the first batch for validation to speed up the process
-    iterator = iter(dataloader)
-    sample = next(iterator)
-
+    sample = next(iter(dataloader))
     images = sample[0].to('cuda')
-
     heatmaps = sample[1]
-    # validities = sample[2].to('cuda')
 
     heatmaps_as_array = heatmaps.detach().cpu().numpy()
 
-    # TODO Do the validities need to be taken into account here?
     outputs = model(images)
 
     output_as_array = outputs.detach().cpu().numpy()
