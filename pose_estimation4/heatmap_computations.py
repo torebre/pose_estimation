@@ -31,7 +31,10 @@ def generate_heatmap_for_image(image) -> tuple:
             x_scaling_factor = 64.0 * (x_coordinate - bbox[0]) / width
             y_scaling_factor = 48.0 * (y_coordinate - bbox[1]) / height
 
-            if x_scaling_factor > 1.0 or y_scaling_factor > 1.0:
+            if x_scaling_factor > 1.0 \
+                    or x_scaling_factor < 0.0 \
+                    or y_scaling_factor > 1.0 \
+                    or y_scaling_factor < 0.0:
                 # This means the feature is not inside the bounding box, skip
                 # the image in that case
                 continue

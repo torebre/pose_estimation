@@ -4,7 +4,6 @@ import os
 import torch
 import torch.nn as nn
 from torch import optim
-from torchsummary import summary
 
 from pose_estimation4.accuracy_computation import get_accuracy
 from pose_estimation4.dataset_loader import CocoDataset
@@ -45,7 +44,7 @@ learning_rate_latch = True
 previous_accuracy = 0.0
 
 for epoch in range(n_epochs):
-    counter = 0
+    batch_counter = 0
 
     for images, heatmaps, validities in training_dataloader:
         # Set training to use CUDA
@@ -64,9 +63,13 @@ for epoch in range(n_epochs):
         optimizer.step()
 
         # TODO Using a small number of batches while developing
-        counter += 1
-        if counter == 1:
-            break
+        batch_counter += 1
+        # if counter == 1:
+        #     break
+
+        if batch_counter % 20 == 0:
+            computed_accuracy = get_accuracy(model, test_dataloader)
+            print(f"Counter: {batch_counter}. Computed accuracy: {computed_accuracy}")
 
         # print("Epoch: %d, Loss: %f" % (epoch, float(loss)))
 
