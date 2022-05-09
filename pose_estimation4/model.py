@@ -10,4 +10,4 @@ print(f"Training on device {device}.")
 
 model = get_model().to('cuda')
 
-train_model(model)
+train_model(model) #, drive_path="/drive/MyDrive/models/exercise_model")

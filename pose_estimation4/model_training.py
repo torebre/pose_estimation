@@ -10,16 +10,20 @@ from pose_estimation4.dataset_loader import CocoDataset
 
 
 def train_model(model, learning_rate=1e-4, learning_rate_updated=1e-5,
-                number_of_epochs=10, drive_path="drive/human_pose_estimation/section4"):
+                number_of_epochs=10,
+                drive_path=""):
     optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    scheduler = optim.lr_scheduler.MultiStepLR(optimizer, [8], 0.1)
     loss_fn = nn.MSELoss()
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
-    def checkpoint_model(model, optimizer, epoch, iteration_counter):
-        # torch.save(model.state_dict(), DRIVE_PATH + "network_" + str(epoch) + "_" + str(batch) + '.pt')
-        torch.save(model.state_dict(), "network_" + str(epoch) + "_" + str(iteration_counter) + '.pt')
+    def save_model(model_to_save, optimizer_to_save, epoch_save, iteration_counter_save):
+        torch.save({
+            "epoch": epoch_save,
+            "iteration_counter": iteration_counter_save,
+            "model_state_dict": model_to_save.state_dict(),
+            "optimizer_state_dict": optimizer_to_save.state_dict()},
+            drive_path + "network_" + str(epoch) + "_" + str(iteration_counter_save) + '.pt')
 
     with open("../annotations/person_keypoints_train2017.json") as train_keypoints:
         image_directory = f"{dir_path}/../train2017"
@@ -64,7 +68,7 @@ def train_model(model, learning_rate=1e-4, learning_rate_updated=1e-5,
                 print(f"Epoch: {epoch}. Counter: {iteration_counter}. Computed accuracy: {computed_accuracy}")
 
             if iteration_counter % 100 == 0:
-                checkpoint_model(model, optimizer, epoch, iteration_counter)
+                save_model(model, optimizer, epoch, iteration_counter)
 
             # scheduler.step()
 
@@ -79,3 +83,5 @@ def train_model(model, learning_rate=1e-4, learning_rate_updated=1e-5,
 
         if computed_accuracy > 0.9:
             break
+
+    save_model(model, optimizer, number_of_epochs, iteration_counter)

@@ -1,11 +1,5 @@
-import random
-
-import matplotlib.pyplot as plt
 import torch
-from scipy.io import loadmat
 
-from pose_estimation2.custom_dataset_provider import SVHN_dataset
-from pose_estimation2.model_setup import get_model
 from pose_estimation4.pck_metric import accuracy
 
 

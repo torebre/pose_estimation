@@ -1,5 +1,4 @@
 import torch.nn as nn
-from torchsummary import summary
 
 
 def weights_init(module):
@@ -37,8 +36,3 @@ def get_model():
 
         nn.Conv2d(kernel_size=1, out_channels=17, stride=1, padding=0, in_channels=256),
     ).apply(weights_init)
-
-
-if __name__ == "__main__":
-    model = get_model().to('cuda')
-    summary(model, (3, 256, 192))
