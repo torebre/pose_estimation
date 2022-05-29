@@ -2,13 +2,15 @@ import json
 import os
 from typing import List
 
+import numpy.typing as npt
 import numpy as np
+
+from PIL import Image
 import torch
 from matplotlib import pyplot as plt
 from torch.utils.data import Dataset
 
 from pose_estimation4.heatmap_computations import generate_heatmap_for_image, apply_gaussian_filter_to_heatmaps
-from pose_estimation4.load_data import load_image
 
 
 class CocoDataset(Dataset):
@@ -16,6 +18,9 @@ class CocoDataset(Dataset):
     image_directory: str
     mean_values = np.array([0.485, 0.456, 0.406])
     scale_values = np.array([0.229, 0.224, 0.225])
+    # An image from the dataset will be scaled to these dimensions
+    image_width = 192
+    image_height = 256
 
     def __init__(self, val_keypoint_data, image_directory: str):
         self.images_to_use = list(filter(filter_function, val_keypoint_data["annotations"]))
@@ -30,39 +35,32 @@ class CocoDataset(Dataset):
         heatmaps, validity = generate_heatmap_for_image(image_data)
         apply_gaussian_filter_to_heatmaps(heatmaps)
 
-        image_tensor = torch.from_numpy(transformed_pixel_array.astype('float32')).permute([2, 1, 0])
+        # image_tensor = torch.from_numpy(transformed_pixel_array.astype('float32')).permute([2, 1, 0])
+        image_tensor = torch.from_numpy(transformed_pixel_array.astype('float32')).permute([2, 0, 1])
 
-        return image_tensor, torch.from_numpy(heatmaps.astype('float32')), torch.from_numpy(
-            validity.astype('float32'))
+        return image_tensor, \
+               torch.from_numpy(heatmaps.astype('float32')), \
+               torch.from_numpy(validity.astype('float32'))
 
     def get_image(self, idx):
         image_data = self.images_to_use[idx]
         leading_zeros = "0" * (12 - len(str(image_data['image_id'])))
         image_file = f"{self.image_directory}/{leading_zeros}{image_data['image_id']}.jpg"
-        image_as_pixel_array = load_image(image_file, image_data)
-
-        # transformed_pixel_array = image_as_pixel_array.astype('float32')
+        image_as_pixel_array = self.load_image(image_file, image_data)
 
         # Scale the image data using the mean and variance given in the exercise text
-        # transformed_pixel_array[:, :, 0] = (transformed_pixel_array[:, :, 0] - self.mean_values[0]) / self.scale_values[
-        #     0]
-        # transformed_pixel_array[:, :, 1] = (transformed_pixel_array[:, :, 1] - self.mean_values[1]) / self.scale_values[
-        #     0]
-        # transformed_pixel_array[:, :, 2] = (transformed_pixel_array[:, :, 2] - self.mean_values[2]) / self.scale_values[
-        #     0]
-
-        mean = np.asarray([0.485, 0.456, 0.406])
-        std = np.asarray([0.229, 0.224, 0.225])
-        transformed_pixel_array = image_as_pixel_array.astype('float32') / 255.0
-        transformed_pixel_array = (transformed_pixel_array - mean) / std
+        transformed_pixel_array = (image_as_pixel_array - self.mean_values) / self.scale_values
 
         # return image_data, image_as_pixel_array
         return image_data, transformed_pixel_array
 
+    def load_image(self, image_file, image_annotation) -> npt.ArrayLike:
+        bbox = image_annotation['bbox']
+        im = Image.open(image_file).convert('RGB')
+        im = im.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3])).resize((self.image_width, self.image_height))
 
-def clean_data(val_keypoint_data) -> List:
-    images_to_use = list(filter(filter_function, val_keypoint_data["annotations"]))
-    return images_to_use
+        pixel_array = np.array(im) / 255.0
+        return pixel_array
 
 
 def filter_function(annotation):
@@ -71,6 +69,10 @@ def filter_function(annotation):
     bounding_box_too_small = annotation["bbox"][2] < 30 or annotation["bbox"][3] < 30
 
     return not (is_crowd or no_keypoint_in_image or bounding_box_too_small)
+
+    # def clean_data(val_keypoint_data) -> List:
+    #     images_to_use = list(filter(filter_function, val_keypoint_data["annotations"]))
+    #     return images_to_use
 
 
 if __name__ == "__main__":
