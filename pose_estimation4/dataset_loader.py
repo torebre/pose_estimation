@@ -21,9 +21,11 @@ class CocoDataset(Dataset):
     # An image from the dataset will be scaled to these dimensions
     image_width = 192
     image_height = 256
+    heatmap_width = 48
+    heatmap_height = 64
 
     def __init__(self, val_keypoint_data, image_directory: str):
-        self.images_to_use = list(filter(filter_function, val_keypoint_data["annotations"]))
+        self.images_to_use = list(filter(lambda x: self.filter_function(x), val_keypoint_data["annotations"]))
         self.image_directory = image_directory
         print(f"Number of images: {len(self.images_to_use)}")
 
@@ -57,18 +59,20 @@ class CocoDataset(Dataset):
     def load_image(self, image_file, image_annotation) -> npt.ArrayLike:
         bbox = image_annotation['bbox']
         im = Image.open(image_file).convert('RGB')
-        im = im.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3])).resize((self.image_width, self.image_height))
+        im = im.crop((bbox[0], bbox[1], bbox[0] + bbox[2], bbox[1] + bbox[3])).resize(
+            (self.image_width, self.image_height))
 
         pixel_array = np.array(im) / 255.0
         return pixel_array
 
+    def filter_function(self, annotation):
+        is_crowd = annotation["iscrowd"] != 0
+        no_keypoint_in_image = all(keypoint == 0 for keypoint in annotation["keypoints"])
+        # bounding_box_too_small = annotation["bbox"][2] < 30 or annotation["bbox"][3] < 30
+        bounding_box_too_small = annotation["bbox"][2] < self.heatmap_width or annotation["bbox"][
+            3] < self.heatmap_height
 
-def filter_function(annotation):
-    is_crowd = annotation["iscrowd"] == 1
-    no_keypoint_in_image = all(keypoint == 0 for keypoint in annotation["keypoints"])
-    bounding_box_too_small = annotation["bbox"][2] < 30 or annotation["bbox"][3] < 30
-
-    return not (is_crowd or no_keypoint_in_image or bounding_box_too_small)
+        return not (is_crowd or no_keypoint_in_image or bounding_box_too_small)
 
     # def clean_data(val_keypoint_data) -> List:
     #     images_to_use = list(filter(filter_function, val_keypoint_data["annotations"]))
